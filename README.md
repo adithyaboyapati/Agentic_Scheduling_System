@@ -6,6 +6,7 @@
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![Vite 8](https://img.shields.io/badge/Vite-8-646cff.svg)](https://vitejs.dev/)
 [![Tests Passing](https://img.shields.io/badge/tests-50%20passed-brightgreen.svg)]()
+[![CI Pipeline](https://github.com/adithyaboyapati/Agentic_Scheduling_System/actions/workflows/ci.yml/badge.svg)](https://github.com/adithyaboyapati/Agentic_Scheduling_System/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > A production-grade, multi-tenant Agentic AI System implementing a strict **12-Step Execution Control Loop** compiled as a LangGraph `StateGraph`, paired with an interactive clinical portal frontend. Built for automated healthcare appointment rescheduling subject to doctor availability, same-slot detection, and deterministic 24-hour advance cancellation policies.
@@ -24,6 +25,7 @@
 - [Repository Structure](#-repository-structure)
 - [Getting Started](#-getting-started)
 - [Running Automated Tests](#-running-automated-tests)
+- [CI/CD Pipeline & Docker Deployment](#-cicd-pipeline--docker-deployment)
 - [API Reference](#-api-reference)
 - [License](#-license)
 
@@ -564,6 +566,46 @@ curl -X POST http://localhost:8001/api/chat \
 }
 ```
 </details>
+
+---
+
+## 🚀 CI/CD Pipeline & Docker Deployment
+
+### GitHub Actions CI Workflow (`.github/workflows/ci.yml`)
+
+The repository includes automated Continuous Integration triggered on every `push` and `pull_request` to `main`:
+
+```mermaid
+flowchart LR
+    Push([Push / PR]) --> Runner{GitHub Actions Runner}
+    Runner --> Backend["🐍 Backend CI\n(Python 3.10 & 3.11 Matrix,\n50 Pytest Tests)"]
+    Runner --> Frontend["⚛️ Frontend CI\n(Node 20, Oxlint,\nVite Production Build)"]
+    Runner --> Security["🛡️ Security Audit\n(Secret Leak & DB Check)"]
+    Backend --> Success([✅ Automated Verification Passed])
+    Frontend --> Success
+    Security --> Success
+```
+
+1. **Backend Matrix CI**: Tests Python 3.10 and 3.11 in parallel with pip caching, executing the full 50-test suite with zero required external API keys.
+2. **Frontend Quality CI**: Runs Oxlint for static analysis and compiles production assets with Vite under Node 20.
+3. **Security Audit**: Scans the git-tracked tree to strictly verify that no `.env` files or SQLite checkpoints are committed.
+
+### Containerized Deployment (Docker)
+
+To build and run the complete multi-stage container locally or in staging:
+
+```bash
+# Build unified production container (React Frontend + FastAPI Backend)
+docker build -t novahealth-agent:latest .
+
+# Run container with your API keys
+docker run -d \
+  -p 8001:8001 \
+  -e OPENAI_API_KEY="your-openai-key" \
+  -e GROQ_API_KEY="your-groq-key" \
+  --name novahealth-portal \
+  novahealth-agent:latest
+```
 
 ---
 

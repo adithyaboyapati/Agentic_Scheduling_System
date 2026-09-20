@@ -1,0 +1,30 @@
+# Git & OS
+.git
+.gitignore
+.DS_Store
+
+# Environment & Secrets
+.env
+.env.local
+*.env
+
+# Databases & Checkpoints
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.deepeval
+.venv
+venv
+env
+
+# Node
+frontend/node_modules
+frontend/dist
+.npm
