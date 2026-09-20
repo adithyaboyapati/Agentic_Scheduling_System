@@ -25,6 +25,7 @@ from src.models.schemas import (
 logger = logging.getLogger("ModelRouter")
 
 PRICING_PER_1M = {
+    "groq-qwen/qwen3.8-27b": {"input": 0.20, "output": 0.30},
     "groq-llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79},
     "groq-llama-3.1-8b-instant": {"input": 0.05, "output": 0.08},
     "openai-gpt-4o": {"input": 2.50, "output": 10.00},
@@ -76,14 +77,14 @@ class ModelRouter:
 
     def __init__(
         self,
-        groq_model: str = "llama-3.3-70b-versatile",
-        openai_model: str = "gpt-4o",
-        fallback_model: str = "gpt-4o-mini",
+        groq_model: Optional[str] = None,
+        openai_model: Optional[str] = None,
+        fallback_model: Optional[str] = None,
         force_offline_mode: bool = False,
     ):
-        self.groq_model = groq_model
-        self.openai_model = openai_model
-        self.fallback_model = fallback_model
+        self.groq_model = groq_model or os.getenv("GROQ_MODEL") or "qwen/qwen3.8-27b"
+        self.openai_model = openai_model or os.getenv("OPENAI_MODEL") or "gpt-4o"
+        self.fallback_model = fallback_model or os.getenv("FALLBACK_MODEL") or "gpt-4o-mini"
         self.force_offline_mode = force_offline_mode
         self.groq_api_key = os.getenv("GROQ_API_KEY")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -93,7 +94,14 @@ class ModelRouter:
 
     def calculate_cost(self, model_key: str, tokens_in: int, tokens_out: int) -> float:
         """Computes cost in USD for token consumption."""
-        rates = PRICING_PER_1M.get(model_key, {"input": 0.0, "output": 0.0})
+        rates = PRICING_PER_1M.get(model_key)
+        if not rates:
+            for k, v in PRICING_PER_1M.items():
+                if k in model_key or model_key in k:
+                    rates = v
+                    break
+        if not rates:
+            rates = {"input": 0.20, "output": 0.30}
         return round((tokens_in * rates["input"] + tokens_out * rates["output"]) / 1_000_000.0, 7)
 
     def classify_intent_and_extract(

@@ -23,7 +23,7 @@
 
 | ⚡ **Sub-100ms Inference** | 🛡️ **Strict 24h Policy** | 🔄 **Self-Correction Loop** | ⏸️ **Persistent HITL Gate** |
 | :---: | :---: | :---: | :---: |
-| **Groq Llama 3.3 70B** extraction layer with OpenAI gpt-4o reasoning | **Deterministic boundary engine** blocks late cancellations before mutations | **Pydantic schema diagnostics** trigger dynamic repair loops (max 2 retries) | **LangGraph SQLite checkpoints** pause execution for patient authorization |
+| **Groq Qwen 3.8 27B** extraction layer with OpenAI gpt-4o reasoning | **Deterministic boundary engine** blocks late cancellations before mutations | **Pydantic schema diagnostics** trigger dynamic repair loops (max 2 retries) | **LangGraph SQLite checkpoints** pause execution for patient authorization |
 
 </div>
 
@@ -59,7 +59,7 @@ Healthcare scheduling cannot rely on naive, unconstrained LLM tool-calling. Unco
 - **Zero Hallucinated Writes**: Read-only actions run seamlessly; high-risk database mutations are quarantined behind a persistent **Human-in-the-Loop (HITL) Gate**.
 - **Deterministic Rules Engine**: Python-level policy checks intercept `<24h` cancellations and redundant same-slot requests before LLM reasoning or database mutation.
 - **Pydantic Validation with Self-Correction**: When schema validation fails, a closed feedback loop routes the error back to the model to repair arguments (bounded to 2 retries).
-- **Dual-Model Performance**: Sub-100ms structured intent extraction powered by Groq (`llama-3.3-70b-versatile`), paired with clinical reasoning and patient communication via OpenAI (`gpt-4o`), with automatic circuit-breaker failover.
+- **Dual-Model Performance**: Sub-100ms structured intent extraction powered by Groq (`qwen/qwen3.8-27b`), paired with clinical reasoning and patient communication via OpenAI (`gpt-4o`), with automatic circuit-breaker failover.
 
 ---
 
@@ -136,7 +136,7 @@ Every incoming interaction travels through an explicit, step-by-step state machi
 flowchart TD
     Start(["📥 User Message Received"]) --> S1["1. receive_message_node\n(PII Scrubbing & Prompt Injection Defense)"]
 
-    S1 --> S2["2. classify_intent_node\n(Groq Llama 3.3 70B: Sub-100ms Extraction)"]
+    S1 --> S2["2. classify_intent_node\n(Groq Qwen 3.8 27B: Sub-100ms Extraction)"]
     S2 --> S3["3. retrieve_context_node\n(Scoped EHR Retrieval: Appointments & Slots)"]
     S3 --> S4["4. check_policy_node\n(24h Advance Notice & Same-Slot Detection)"]
 
@@ -182,7 +182,7 @@ flowchart TD
 | Step # | Node Name | Component | Functionality & Guarantees |
 |:---:|:---|:---|:---|
 | **1** | `receive_message_node` | `SecurityGuardrails` | Sanitizes input, scrubs PII (SSN, phone, email, MRN), and blocks adversarial prompt injections before LLM invocation. |
-| **2** | `classify_intent_node` | `ModelRouter` (Groq) | Sub-100ms structured intent classification (`RESCHEDULE`, `CANCEL`, `INQUIRE`, `AUDIT`) via `llama-3.3-70b-versatile`. |
+| **2** | `classify_intent_node` | `ModelRouter` (Groq) | Sub-100ms structured intent classification (`RESCHEDULE`, `CANCEL`, `INQUIRE`, `AUDIT`) via `qwen/qwen3.8-27b`. |
 | **3** | `retrieve_context_node` | `ContextRetriever` | Scoped EHR retrieval (active patient record, current appointment, doctor availability) without whole-database dumping. |
 | **4** | `check_policy_node` | `PolicyEngine` (OpenAI) | Enforces the strict **24-hour advance cancellation rule**, intercepts **redundant same-slot requests (`POLICY_SAME_SLOT`)**, and validates patient authorization. |
 | **5** | `select_tools_node` | Tool Selector & Repair | Resolves tool schemas (`GetAppointmentDetails`, `GetAvailableSlots`, `RequestSlotReschedule`). Operates the **Dynamic Feedback Repair Engine** on Pydantic errors. |
@@ -296,7 +296,7 @@ stateDiagram-v2
 
 | Role | Primary Provider & Model | Latency | Fallback Model |
 |:---|:---|:---:|:---|
-| **Fast Extraction** (Steps 2 & 6) | Groq `llama-3.3-70b-versatile` | **< 100ms** | OpenAI `gpt-4o-mini` |
+| **Fast Extraction** (Steps 2 & 6) | Groq `qwen/qwen3.8-27b` | **< 100ms** | OpenAI `gpt-4o-mini` |
 | **Reasoning & Synthesis** (Steps 4 & 10) | OpenAI `gpt-4o` | ~1200ms | OpenAI `gpt-4o-mini` |
 | **Policy Enforcement** (Step 4) | Deterministic Python Rules Engine | **< 1ms** | Direct bypass |
 
